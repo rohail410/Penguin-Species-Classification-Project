@@ -1,13 +1,13 @@
 ---
 name: categorical-data-cleaning
-description: Clean the categorical (text/object) columns of a dataset that is already loaded into a Jupyter notebook — handling missing values, inconsistent formatting, spelling/abbreviation variants, invalid categories, rare/high-cardinality categories, and domain-consistency checks. Adds new cells directly to the notebook and writes a companion Markdown report (Data_Cleaning_Categorical_Columns.md in a "data cleaning report" folder) documenting every change with before/after evidence. Use this whenever the user asks to clean, standardize, fix, or audit categorical/text columns in a notebook, asks about category distributions, rare categories, cardinality, or inconsistent category spellings, or asks to update/redo a categorical cleaning pass they ran earlier. Always prefer this skill over ad-hoc cleaning code for this kind of task, even if the user just says something like "can you clean up the string columns in this data" or "the category values are messy, can you sort them out."
+description: Clean the categorical (text/object) columns of a dataset already loaded in a Jupyter notebook — missing values, inconsistent formatting, spelling/abbreviation variants, invalid categories, rare/high-cardinality categories, and domain-consistency checks — then optionally convert cleaned columns to pandas "category" dtype (useful for XGBoost/LightGBM). Adds cells directly to the notebook and writes a companion Markdown report (Data_Cleaning_Categorical_Columns.md in a "data cleaning report" folder) with before/after evidence. Use whenever the user asks to clean, standardize, fix, or audit categorical/text columns, asks about category distributions, rare categories, cardinality, or spelling inconsistencies, or asks to update a categorical cleaning pass done earlier. Prefer this over ad-hoc cleaning code, even for phrasing like "clean up the string columns" or "the category values are messy."
 ---
 
 # Categorical Data Cleaning
 
 ## What this skill does
 
-Runs a structured, 8-step categorical-cleaning pass over the categorical (object/string) columns of a DataFrame that already exists in the user's notebook, adds the cleaning code as new cells in that same notebook, and produces a Markdown report that a non-technical stakeholder could read to understand exactly what changed and why.
+Runs a structured, 8-step categorical-cleaning pass over the categorical (object/string) columns of a DataFrame that already exists in the user's notebook, adds the cleaning code as new cells in that same notebook, and produces a Markdown report that a non-technical stakeholder could read to understand exactly what changed and why. After the 8 steps are done, there's one optional follow-up: offering to convert the cleaned columns to pandas `category` dtype.
 
 The point of the structure below isn't to be followed like a rigid checklist for its own sake — categorical data breaks in a fairly predictable sequence of ways (missing values, then formatting noise, then near-duplicate spellings, then genuinely invalid values, then long-tail rarity), and cleaning them in that order matters: e.g., you can't sensibly judge cardinality or rare categories until formatting and spelling variants have already been merged, or you'll double-count "usa", "USA", and "U.S.A." as three separate rare categories. Use judgment about how deep to go on each step for a given column — a clean 3-value column doesn't need the same scrutiny as a messy 200-value free-text field.
 
@@ -31,6 +31,14 @@ Work through these per categorical column. Add one notebook cell (or a small log
 7. **Handle rare/high-cardinality categories.** Decide, with the user, what counts as "rare" for this dataset (a fixed count threshold, a percentage threshold, or "the long tail beyond the top N") and how to handle it — group into "Other", keep as-is if rarity is meaningful (e.g. rare disease categories shouldn't be lumped away), or something else. This is highly dataset-dependent, so don't apply a default threshold without asking.
 8. **Verify consistency with domain knowledge.** Sanity-check the cleaned categories against what the user knows about the domain — e.g., does a `country` column's category list roughly match expected countries in the dataset's context? Does a `department` column match the departments the user says actually exist? Ask the user directly if anything looks off, since this step depends entirely on context you don't have.
 
+## Optional step: convert to `category` dtype
+
+Once the 8 steps above are finished for all columns, ask the user whether they'd like the cleaned columns converted from `object` to pandas' `category` dtype. Mention briefly why this can matter: it's memory-efficient, and it's the dtype that tree-based models like XGBoost/LightGBM (with `enable_categorical=True`) and CatBoost expect to natively recognize a column as categorical rather than free text — but it's not something to apply by default, since not every downstream use benefits from it (e.g. if the user is about to one-hot or ordinal encode anyway, or is using a model/library that doesn't support it).
+
+- If the user says no, or doesn't want it, skip this entirely — don't convert anything.
+- If the user says yes, ask (or confirm) which of the cleaned columns to convert — default to "all of them" if they don't want to pick individually — then add a notebook cell that converts those columns with `.astype("category")`, and re-display `df.dtypes` (or similar) for the affected columns so the change is visible.
+- Record the decision in the report regardless of which way it went (see the "Dtype conversion" section of the template) — even "user declined to convert to category dtype" is worth a one-line note, so a future reader isn't left wondering why the column is still `object`.
+
 ## Writing to the notebook
 
 - Use the notebook editing tool to append cells to the **existing** notebook the DataFrame came from — don't create a separate notebook.
@@ -46,7 +54,7 @@ Fill it in with real evidence, not generic statements: actual value counts, actu
 
 ## Updating a previous cleaning pass
 
-If the user comes back later and says something like "actually don't merge NY into New York" or "redo the rare-category grouping with a different threshold":
+If the user comes back later and says something like "actually don't merge NY into New York", "redo the rare-category grouping with a different threshold", or "actually go ahead and convert those columns to category dtype now":
 
 1. Read the existing report to understand what was done and why.
 2. Find and edit the relevant notebook cell(s) directly — don't re-run the whole pipeline from scratch or duplicate cells, since that leaves stale cells behind and confuses the notebook's narrative. Re-run affected cells (and anything downstream that depends on them) so the notebook's outputs stay correct.

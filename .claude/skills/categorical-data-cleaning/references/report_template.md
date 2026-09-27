@@ -55,11 +55,20 @@ Repeat this section for every categorical column touched (including columns revi
 
 *(repeat "3. Column-by-column details" per column)*
 
-## 4. Open questions / follow-ups
+## 4. Dtype conversion
+
+Whether cleaned columns were converted to pandas `category` dtype after cleaning, and why.
+
+| Column | Converted to `category`? | Notes |
+|---|---|---|
+| `example_col` | Yes | User plans to use XGBoost with `enable_categorical=True` |
+| `other_col` | No | User declined — will one-hot encode instead |
+
+## 5. Open questions / follow-ups
 
 Anything flagged during cleaning that the user hasn't resolved yet, or judgment calls that may be worth revisiting later. Remove this section if there are none.
 
-## 5. Revision history
+## 6. Revision history
 
 Append an entry here every time the notebook/report is updated after the initial pass — don't rewrite earlier entries.
 

@@ -4,138 +4,132 @@
 
 ## 1. Overview
 
-The dataset has 1,000 rows and 3 categorical columns: `species`, `island`, and `sex`. This matches the structure of the well-known Palmer Penguins dataset. All three columns reviewed came back clean — no whitespace/case inconsistencies, no spelling/abbreviation variants, no invalid categories, and no rare-category problem. The only issue found was 10 missing values (1.0%) in `sex`, which was left as `NaN` at the user's request pending a modeling-stage decision. All three columns were converted to pandas `category` dtype.
+The dataset has 1,000 rows and 3 categorical columns: `species` (the prediction target), `island`, and `sex`. All three were already clean — no formatting inconsistencies, spelling variants, invalid categories, or rare categories were found. The only issue was 10 missing values (1%) in `sex`, which were left as `NaN` per the user's decision.
 
 ## 2. Summary table
 
 | Column | # Unique (before → after) | Missing % | Key issues found | Action taken |
 |---|---|---|---|---|
-| `species` | 3 → 3 | 0.0% | None | None — reviewed and confirmed clean |
-| `island` | 3 → 3 | 0.0% | None | None — reviewed and confirmed clean |
-| `sex` | 2 → 2 | 1.0% | 10 missing values | Left as `NaN`, deferred to modeling stage |
+| `species` | 3 → 3 | 0% | None | None needed |
+| `island` | 3 → 3 | 0% | None | None needed |
+| `sex` | 2 → 2 | 1.0% | 10 missing values | Left as `NaN` (not imputed/dropped) |
 
 ## 3. Column-by-column details
 
 ### `species`
 
-**What this column represents:** the penguin's species — the target/label column for this classification project.
+**What this column represents:** The prediction target — the penguin's species (Adelie, Gentoo, or Chinstrap).
 
 **1. Missing/unknown values**
-- 0 nulls, 0 placeholder-junk values (checked for `""`, `"NA"`, `"N/A"`, `"none"`, `"null"`, `"-"`, `"unknown"`, `"?"`, `"9999"`).
-- No decision needed.
+- 0 missing, 0 disguised-null placeholders (`"NA"`, `"unknown"`, `"?"`, etc.)
 
 **2. Formatting standardization**
-- No whitespace, double-space, or case issues found. Values already consistent: `Adelie`, `Gentoo`, `Chinstrap`.
-- No changes applied.
+- Checked for whitespace/casing inconsistencies via `.str.strip()` + whitespace collapse — 0 values changed. Already consistently formatted (title case, no stray whitespace).
 
 **3. Category name standardization**
-- Fuzzy-similarity check across the 3 unique values found no near-duplicate pairs.
-- No merges applied.
+- Fuzzy-matching pass (`difflib.get_close_matches`, cutoff 0.75) found no near-duplicate spellings among `Adelie`, `Gentoo`, `Chinstrap`.
 
 **4. Category validation**
-- Actual values (`Adelie`, `Chinstrap`, `Gentoo`) checked against the known valid set for this domain — no invalid values found.
+- Checked against the known valid set for this domain (`{Adelie, Gentoo, Chinstrap}`) — no invalid values found.
 
 **5. Distribution**
-| Value | Count | % |
+| Category | Count | % |
 |---|---|---|
 | Adelie | 461 | 46.1% |
 | Gentoo | 288 | 28.8% |
 | Chinstrap | 251 | 25.1% |
 
 **6. Cardinality**
-- 3 unique values before and after — expected for a species label.
+- 3 unique values before and after — expected for a 3-species target column.
 
 **7. Rare category handling**
-- No threshold needed — smallest category (Chinstrap, 25.1%) is far from rare.
+- Threshold used: <5% of rows. No category fell below this threshold (smallest is Chinstrap at 25.1%), so nothing was grouped.
 
 **8. Domain consistency check**
-- Matches the 3 known Palmer Penguins species exactly. Confirmed fine.
+- Matches the three species (Adelie, Chinstrap, Gentoo) documented in the well-known Palmer Archipelago penguins dataset this data derives from. Confirmed fine.
 
 ---
 
 ### `island`
 
-**What this column represents:** the island in the Palmer Archipelago where the penguin was observed.
+**What this column represents:** Which of three islands in the Palmer Archipelago the penguin was recorded on.
 
 **1. Missing/unknown values**
-- 0 nulls, 0 placeholder-junk values.
-- No decision needed.
+- 0 missing, 0 disguised-null placeholders.
 
 **2. Formatting standardization**
-- No whitespace, double-space, or case issues found. Values already consistent: `Torgersen`, `Biscoe`, `Dream`.
-- No changes applied.
+- Checked via `.str.strip()` + whitespace collapse — 0 values changed. Already consistent (title case, no stray whitespace).
 
 **3. Category name standardization**
-- Fuzzy-similarity check across the 3 unique values found no near-duplicate pairs.
-- No merges applied.
+- Fuzzy-matching pass found no near-duplicate spellings among `Biscoe`, `Dream`, `Torgersen`.
 
 **4. Category validation**
-- Actual values (`Biscoe`, `Dream`, `Torgersen`) checked against the known valid set for this domain — no invalid values found.
+- Checked against the known valid set (`{Biscoe, Dream, Torgersen}`) — no invalid values found.
 
 **5. Distribution**
-| Value | Count | % |
+| Category | Count | % |
 |---|---|---|
 | Dream | 527 | 52.7% |
 | Biscoe | 302 | 30.2% |
 | Torgersen | 171 | 17.1% |
 
 **6. Cardinality**
-- 3 unique values before and after — expected for an island field.
+- 3 unique values before and after — expected for the three islands in this dataset's collection area.
 
 **7. Rare category handling**
-- No threshold needed — smallest category (Torgersen, 17.1%) is far from rare.
+- Threshold used: <5% of rows. No category fell below this threshold (smallest is Torgersen at 17.1%), so nothing was grouped.
 
 **8. Domain consistency check**
-- Matches the 3 known Palmer Archipelago islands exactly. Confirmed fine.
+- Matches the three islands (Biscoe, Dream, Torgersen) documented in the Palmer Archipelago penguins dataset. Confirmed fine.
 
 ---
 
 ### `sex`
 
-**What this column represents:** the penguin's sex.
+**What this column represents:** The penguin's biological sex (Male/Female).
 
 **1. Missing/unknown values**
-- 10 nulls (1.0% of rows), 0 placeholder-junk values.
-- **Decision (confirmed with user):** leave the 10 `NaN` values untouched for this cleaning pass — no imputation, no explicit `"Missing"` category. The handling decision is deferred to the modeling/imputation step.
+- 10 missing (1.0% of rows), 0 disguised-null placeholders.
+- **Decision (user):** left as real `NaN`, not imputed or dropped. Rationale: sex can't be reliably inferred from the bill/flipper/body-mass measurements alone, and 1% of rows isn't worth discarding.
 
 **2. Formatting standardization**
-- No whitespace, double-space, or case issues found. Values already consistent: `Female`, `Male`.
-- No changes applied.
+- Checked via `.str.strip()` + whitespace collapse — 0 values changed. Already consistent (title case, no stray whitespace).
 
 **3. Category name standardization**
-- Fuzzy-similarity check flagged `'Female'` vs `'Male'` (similarity 0.80) — reviewed and determined to be a false positive of character-level string similarity, not a real spelling/abbreviation variant. Male and Female are genuinely distinct categories.
-- No merges applied.
+- Fuzzy-matching pass found no near-duplicate spellings among `Male`, `Female`.
 
 **4. Category validation**
-- Actual values (`Female`, `Male`) checked against the known valid set for this domain — no invalid values found.
+- Checked against the known valid set (`{Male, Female}`) — no invalid values found (other than the expected `NaN`s).
 
-**5. Distribution** (including missing)
-| Value | Count | % |
+**5. Distribution**
+| Category | Count | % |
 |---|---|---|
 | Male | 528 | 52.8% |
 | Female | 462 | 46.2% |
-| *(missing)* | 10 | 1.0% |
+| NaN | 10 | 1.0% |
 
 **6. Cardinality**
-- 2 unique values before and after — expected for a binary sex field.
+- 2 unique values (excluding `NaN`) before and after — expected for a binary sex field.
 
 **7. Rare category handling**
-- No threshold needed — both categories are well-represented.
+- Threshold used: <5% of rows. Neither Male (52.8%) nor Female (46.2%) fell below this threshold, so nothing was grouped. (The `NaN`s are handled as missing values, not as a rare category.)
 
 **8. Domain consistency check**
-- Binary Male/Female matches domain expectations for this dataset. Confirmed fine.
+- Binary Male/Female values match expectations for a biological sex field. Confirmed fine.
+
+---
 
 ## 4. Dtype conversion
 
 | Column | Converted to `category`? | Notes |
 |---|---|---|
-| `species` | Yes | User opted to convert all three columns; supports native categorical handling in tree-based models (XGBoost/LightGBM with `enable_categorical=True`, CatBoost) and is more memory-efficient. |
-| `island` | Yes | Same as above. |
-| `sex` | Yes | Same as above. Note: the `category` dtype still represents the 10 missing values as `NaN`. |
+| `species` | Yes | User confirmed conversion for all three columns, in preparation for tree-based models (e.g. XGBoost with `enable_categorical=True`) |
+| `island` | Yes | Same as above |
+| `sex` | Yes | Same as above |
 
 ## 5. Open questions / follow-ups
 
-- **`sex` missing values (10 rows, 1.0%):** left as `NaN` by user decision. Needs a final call (impute, explicit "Missing" category, or drop) before/during modeling, since some pipelines and encoders handle `NaN` in a `category` column differently than others.
+None.
 
 ## 6. Revision history
 

@@ -83,10 +83,22 @@ any numeric-looking columns that seem like they're actually encoded categories
 Present the list you found and ask the user to confirm or amend it.
 
 If any categorical columns are confirmed, plan to pass `enable_categorical=True`
-to the XGBoost constructor and make sure those columns are cast to pandas
+to the XGBoost constructor and make sure those columns end up as pandas
 `category` dtype before fitting (XGBoost requires this even with
 `enable_categorical=True` — a column left as `object` dtype will error out).
 If there are no categorical columns, skip this and don't set the parameter.
+
+Check each confirmed column's current dtype before touching it: if it's
+already `category`, leave it alone — don't re-cast it. Only convert the ones
+that aren't already `category` (typically `object` or `bool`). This matters
+because a column that's already `category` may carry curated metadata (a
+specific category ordering, or a fixed set of categories that includes ones
+not present in this particular training slice) that a blanket
+`astype("category")` would silently throw away and rebuild from just the
+values seen in `X_train`. Re-deriving categories from a subset of the data
+is also how a category present only in the test set ends up missing from the
+training set's dtype — the reference script's `prepare_categoricals` helper
+does this dtype check for you.
 
 ### 5. Ask about random state
 

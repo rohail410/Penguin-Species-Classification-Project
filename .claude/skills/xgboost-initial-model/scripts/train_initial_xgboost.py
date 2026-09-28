@@ -39,10 +39,19 @@ IS_BINARY = True          # only relevant if PROBLEM_TYPE == "classification"
 # Step: cast confirmed categorical columns to pandas 'category' dtype.
 # XGBoost requires this even with enable_categorical=True — an 'object'
 # dtype column will raise an error at fit time.
+#
+# Columns already in 'category' dtype are left untouched rather than
+# re-cast. A blanket astype("category") on an already-categorical column
+# would silently rebuild its categories from just the values present in
+# this DataFrame, discarding any curated ordering or a fixed category set
+# that intentionally includes values not seen in this particular slice
+# (e.g. a category that only shows up in the test set).
 # ---------------------------------------------------------------------------
 def prepare_categoricals(df: pd.DataFrame, categorical_columns: list) -> pd.DataFrame:
     df = df.copy()
     for col in categorical_columns:
+        if isinstance(df[col].dtype, pd.CategoricalDtype):
+            continue  # already category dtype — don't touch it
         df[col] = df[col].astype("category")
     return df
 
